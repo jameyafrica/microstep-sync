@@ -34,6 +34,28 @@ MicroStep Sync is the backend-integrated companion module for the MicroStep ecos
 
 ---
 
+## ⚠️ Known Limitations
+
+### No Native Firebase SDK for Linux Desktop
+Firebase does not currently publish an official native SDK for Linux desktop.
+As a result, `firebase_core`/`firebase_auth`/`cloud_firestore` cannot establish
+a live connection when compiled as a native Linux binary (`flutter run -d linux`
+will throw a `PlatformException` on `Firebase.initializeApp()`).
+
+**Workaround:** Live/manual Firebase verification during development is done via
+`flutter run -d chrome`, using the app's `web` Firebase configuration (registered
+alongside `android` via `flutterfire configure`). All automated tests (unit, mock,
+and widget) are unaffected by this limitation, since Firebase calls are fully
+mocked via `mocktail` / `fake_cloud_firestore` and never touch a real platform
+channel or network connection.
+
+The final packaged Linux desktop build targets UI/UX and local behavior; live
+cloud sync on that build specifically would require either running the web
+build inside a webview, or replacing the official plugins with the
+community-maintained `firebase_dart` package (a pure-Dart client that avoids
+platform channels entirely). This was evaluated and deferred as out of scope
+for the current project phase.
+
 ## 🚀 How to Run Locally
 
 1. **Clone the repository:**

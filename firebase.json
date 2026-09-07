@@ -1,0 +1,1 @@
+{"flutter":{"platforms":{"android":{"default":{"projectId":"microstep-sync","appId":"1:477815432568:android:4e4dde1b6370eac0f8d48d","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"microstep-sync","configurations":{"android":"1:477815432568:android:4e4dde1b6370eac0f8d48d","web":"1:477815432568:web:4f85c2bda7061da0f8d48d"}}}}}}
