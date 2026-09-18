@@ -4,12 +4,12 @@ import 'package:microstep_sync/models/app_user.dart';
 
 class AuthException implements Exception {
   final String message;
-  AuthException(this.message);
+  final String? code;
+  AuthException(this.message, {this.code});
 
   @override
   String toString() => message;
 }
-
 
 class AuthService {
  final FirebaseAuth _firebaseAuth;
@@ -21,7 +21,7 @@ AuthService({FirebaseAuth? firebaseAuth})
   try {
     await _firebaseAuth.signInAnonymously();
   } on FirebaseAuthException catch (e) {
-    throw AuthException(e.message ?? 'Anonymous sign-in failed.');
+   throw AuthException(e.message ?? 'Anonymous sign-in failed.', code: e.code);
   }
   }
 
@@ -32,7 +32,7 @@ AuthService({FirebaseAuth? firebaseAuth})
       password: password,
     );
    } on FirebaseAuthException catch (e) {
-    throw AuthException(e.message ?? 'Sign up failed');
+    throw AuthException(e.message ?? 'Sign up failed', code: e.code);
    }
   }
 
@@ -44,7 +44,7 @@ AuthService({FirebaseAuth? firebaseAuth})
       password: password,
     );
     } on FirebaseAuthException catch (e) {
-      throw AuthException(e.message ?? 'Sign in failed');
+      throw AuthException(e.message ?? 'Sign in failed', code: e.code);
     }
   }
 
@@ -52,11 +52,27 @@ AuthService({FirebaseAuth? firebaseAuth})
     try {
       await _firebaseAuth.signOut();
     } on FirebaseAuthException catch (e) {
-      throw AuthException(e.message ?? 'Sign out failed');
+      throw AuthException(e.message ?? 'Sign out failed', code: e.code);
     }
-
-   
   
+}
+
+Future<void> linkAnonymousWithEmail(String email, String password) async {
+  final currentUser = _firebaseAuth.currentUser;
+  if (currentUser == null) {
+    throw AuthException('No signed-in user to link.');
+  }
+
+  final credential = EmailAuthProvider.credential(
+    email: email,
+    password: password,
+  );
+
+  try {
+    await currentUser.linkWithCredential(credential);
+  } on FirebaseAuthException catch (e) {
+    throw AuthException(e.message ?? 'Account linking failed.', code: e.code);
+  }
 }
 
 //written as a getter, not methid with()

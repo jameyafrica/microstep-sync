@@ -17,6 +17,12 @@ void main() {
     authService = AuthService(firebaseAuth: mockFirebaseAuth);
   });
 
+  setUpAll(() {
+    registerFallbackValue(
+      EmailAuthProvider.credential(email: 'fallback@example.com', password: 'fallback'),
+    );
+  });
+
   group('signInAnonymously', () {
     test('calls FirebaseAuth.signInAnonymously() and completes normally', () async {
       when(() => mockFirebaseAuth.signInAnonymously())
@@ -149,4 +155,58 @@ void main() {
       expect(result, isNull);
     });
   });
+
+    group('linkAnonymousWithEmail', () {
+    test('calls linkWithCredential on the current user with correct credential', () async {
+      final mockUser = MockUser();
+      when(() => mockFirebaseAuth.currentUser).thenReturn(mockUser);
+      when(() => mockUser.linkWithCredential(any()))
+          .thenAnswer((_) async => MockUserCredential());
+
+      await authService.linkAnonymousWithEmail('test@example.com', 'password123');
+
+      verify(() => mockUser.linkWithCredential(any())).called(1);
+    });
+
+    test('throws AuthException when there is no current user', () async {
+      when(() => mockFirebaseAuth.currentUser).thenReturn(null);
+
+      expect(
+        () => authService.linkAnonymousWithEmail('test@example.com', 'password123'),
+        throwsA(isA<AuthException>()),
+      );
+    });
+
+    test('throws AuthException when FirebaseAuthException is thrown', () async {
+      final mockUser = MockUser();
+      when(() => mockFirebaseAuth.currentUser).thenReturn(mockUser);
+      when(() => mockUser.linkWithCredential(any())).thenThrow(
+        FirebaseAuthException(code: 'weak-password', message: 'Password too weak.'),
+      );
+
+      expect(
+        () => authService.linkAnonymousWithEmail('test@example.com', 'weak'),
+        throwsA(isA<AuthException>()),
+      );
+    });
+
+    test('throws AuthException with code "credential-already-in-use" on conflict', () async {
+      final mockUser = MockUser();
+      when(() => mockFirebaseAuth.currentUser).thenReturn(mockUser);
+      when(() => mockUser.linkWithCredential(any())).thenThrow(
+        FirebaseAuthException(
+          code: 'credential-already-in-use',
+          message: 'This email is already linked to another account.',
+        ),
+      );
+
+      try {
+        await authService.linkAnonymousWithEmail('taken@example.com', 'password123');
+        fail('Expected an AuthException to be thrown');
+      } on AuthException catch (e) {
+        expect(e.code, 'credential-already-in-use');
+      }
+    });
+  });
+
 }
